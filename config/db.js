@@ -1,7 +1,6 @@
 const dns = require("dns");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 
-const uri = process.env.MONGODB_URI;
 const dbName = process.env.DB_NAME || "studynookDB";
 
 const dnsServers = process.env.DNS_SERVERS
@@ -14,6 +13,8 @@ let client;
 let db;
 
 const connectDB = async () => {
+  const uri = process.env.MONGODB_URI;
+
   if (!uri) {
     throw new Error("MONGODB_URI is missing in .env file");
   }

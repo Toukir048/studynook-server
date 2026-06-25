@@ -1,3 +1,4 @@
+const roomsRoutes = require("./routes/roomsRoutes");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -21,6 +22,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/auth", authRoutes);
+app.use("/api/rooms", roomsRoutes);
 // Health check route
 app.get("/", (req, res) => {
   res.send({
