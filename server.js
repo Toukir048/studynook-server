@@ -4,7 +4,7 @@ const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const { connectDB, getDB } = require("./config/db");
-
+const authRoutes = require("./routes/authRoutes");
 const app = express();
 
 const port = process.env.PORT || 5000;
@@ -20,7 +20,7 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
-
+app.use("/api/auth", authRoutes);
 // Health check route
 app.get("/", (req, res) => {
   res.send({
