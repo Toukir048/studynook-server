@@ -1,5 +1,3 @@
-const roomsRoutes = require("./routes/roomsRoutes");
-const bookingsRoutes = require("./routes/bookingsRoutes");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -7,25 +5,26 @@ require("dotenv").config();
 
 const { connectDB, getDB } = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const roomsRoutes = require("./routes/roomsRoutes");
+const bookingsRoutes = require("./routes/bookingsRoutes");
+
 const app = express();
 
 const port = process.env.PORT || 5000;
 const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
 
-// Middleware
+const allowedOrigins = clientUrl.split(",").map((url) => url.trim());
+
 app.use(
   cors({
-    origin: clientUrl,
+    origin: allowedOrigins,
     credentials: true,
   })
 );
 
 app.use(express.json());
 app.use(cookieParser());
-app.use("/api/auth", authRoutes);
-app.use("/api/rooms", roomsRoutes);
-app.use("/api/bookings", bookingsRoutes);
-// Health check route
+
 app.get("/", (req, res) => {
   res.send({
     success: true,
@@ -33,40 +32,40 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/api/health", async (req, res) => {
-  let databaseStatus = "disconnected";
-
+app.get("/api/health", async (req, res, next) => {
   try {
-    await getDB().command({ ping: 1 });
-    databaseStatus = "connected";
-  } catch (error) {
-    databaseStatus = "disconnected";
-  }
+    const db = getDB();
 
-  res.send({
-    success: true,
-    message: "Server health check successful",
-    environment: process.env.NODE_ENV || "development",
-    database: databaseStatus,
-    timestamp: new Date().toISOString(),
-  });
+    await db.command({ ping: 1 });
+
+    res.send({
+      success: true,
+      message: "StudyNook API is healthy",
+      database: "connected",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
-// Not found route
+app.use("/api/auth", authRoutes);
+app.use("/api/rooms", roomsRoutes);
+app.use("/api/bookings", bookingsRoutes);
+
 app.use((req, res) => {
   res.status(404).send({
     success: false,
-    message: "API route not found",
+    message: `Route not found: ${req.originalUrl}`,
   });
 });
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err);
+app.use((error, req, res, next) => {
+  console.error("Server Error:", error.message);
 
-  res.status(err.status || 500).send({
+  res.status(error.status || 500).send({
     success: false,
-    message: err.message || "Internal server error",
+    message: error.message || "Internal server error",
   });
 });
 
