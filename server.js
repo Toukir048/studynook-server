@@ -3,6 +3,8 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
+const { connectDB, getDB } = require("./config/db");
+
 const app = express();
 
 const port = process.env.PORT || 5000;
@@ -27,11 +29,21 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
+  let databaseStatus = "disconnected";
+
+  try {
+    await getDB().command({ ping: 1 });
+    databaseStatus = "connected";
+  } catch (error) {
+    databaseStatus = "disconnected";
+  }
+
   res.send({
     success: true,
     message: "Server health check successful",
     environment: process.env.NODE_ENV || "development",
+    database: databaseStatus,
     timestamp: new Date().toISOString(),
   });
 });
@@ -54,6 +66,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`StudyNook server is running on port ${port}`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    app.listen(port, () => {
+      console.log(`StudyNook server is running on port ${port}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
