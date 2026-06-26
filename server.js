@@ -32,10 +32,9 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/api/health", async (req, res, next) => {
+app.get("/api/health", async (req, res) => {
   try {
     const db = getDB();
-
     await db.command({ ping: 1 });
 
     res.send({
@@ -45,7 +44,11 @@ app.get("/api/health", async (req, res, next) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    next(error);
+    res.status(500).send({
+      success: false,
+      message: "Database is not connected",
+      error: error.message,
+    });
   }
 });
 
@@ -69,17 +72,14 @@ app.use((error, req, res, next) => {
   });
 });
 
-const startServer = async () => {
-  try {
-    await connectDB();
+app.listen(port, () => {
+  console.log(`StudyNook server is running on port ${port}`);
 
-    app.listen(port, () => {
-      console.log(`StudyNook server is running on port ${port}`);
+  connectDB()
+    .then(() => {
+      console.log("Database connection ready");
+    })
+    .catch((error) => {
+      console.error("Database connection failed:", error.message);
     });
-  } catch (error) {
-    console.error("Failed to start server:", error.message);
-    process.exit(1);
-  }
-};
-
-startServer();
+});
